@@ -1,14 +1,15 @@
-import { defineConfig } from 'vite';
-import vue from '@vitejs/plugin-vue';
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
-    plugins: [vue()],
-    build: {
-        outDir: 'dist',
-        rollupOptions: {
-            input: {
-                main: './index.html'
-            }
-        }
-    }
-});
+  plugins: [vue()],
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    minify: 'terser'
+  },
+  server: {
+    port: 3000
+  }
+})
