@@ -1,8 +1,9 @@
-const CACHE_NAME = 'liquid-vending-v1';
+const CACHE_NAME = 'liquid-vending-v2';
 const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/sw.js',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css',
   'https://unpkg.com/vue@3/dist/vue.global.js',
   'https://unpkg.com/vue-router@4/dist/vue-router.global.js'
@@ -16,21 +17,9 @@ self.addEventListener('install', function(event) {
         console.log('Opened cache');
         return cache.addAll(urlsToCache);
       })
-  );
-});
-
-// Fetch event
-self.addEventListener('fetch', function(event) {
-  event.respondWith(
-    caches.match(event.request)
-      .then(function(response) {
-        // Return cached version or fetch from network
-        if (response) {
-          return response;
-        }
-        return fetch(event.request);
-      }
-    )
+      .then(() => {
+        return self.skipWaiting();
+      })
   );
 });
 
@@ -45,6 +34,22 @@ self.addEventListener('activate', function(event) {
           }
         })
       );
+    }).then(() => {
+      return self.clients.claim();
     })
+  );
+});
+
+// Fetch event
+self.addEventListener('fetch', function(event) {
+  event.respondWith(
+    caches.match(event.request)
+      .then(function(response) {
+        if (response) {
+          return response;
+        }
+        return fetch(event.request);
+      }
+    )
   );
 });

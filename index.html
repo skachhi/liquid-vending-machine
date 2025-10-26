@@ -198,8 +198,22 @@
                 grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             }
         }
-    </style>
-</head>
+            @keyframes pulse {
+                0% {
+                    transform: scale(1);
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                }
+                50% {
+                    transform: scale(1.05);
+                    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+                }
+                100% {
+                    transform: scale(1);
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                }
+            }
+        </style>
+    </head>
 <body>
     <div id="app"></div>
 
@@ -461,44 +475,103 @@
         app.use(router);
         app.mount('#app');
 
-        // PWA Service Worker Registration
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(function(registration) {
-                        console.log('ServiceWorker registration successful');
-                    })
-                    .catch(function(err) {
-                        console.log('ServiceWorker registration failed');
-                    });
-            });
-        }
-
-        // PWA Install Prompt
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            
-            // Show install button
-            const installBtn = document.createElement('button');
-            installBtn.innerHTML = '<i class="fas fa-download"></i> Install App';
-            installBtn.className = 'btn btn-success';
-            installBtn.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 1000;';
-            
-            installBtn.addEventListener('click', () => {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        console.log('User accepted the install prompt');
-                    }
-                    deferredPrompt = null;
-                    installBtn.remove();
+            // PWA Service Worker Registration
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js')
+                        .then(function(registration) {
+                            console.log('ServiceWorker registration successful');
+                            console.log('Registration scope:', registration.scope);
+                        })
+                        .catch(function(err) {
+                            console.log('ServiceWorker registration failed:', err);
+                        });
                 });
+            }
+
+            // PWA Install Prompt Logic
+            let deferredPrompt;
+            let isInstalled = false;
+
+            // Check if app is already installed
+            window.addEventListener('appinstalled', (evt) => {
+                console.log('App was installed');
+                isInstalled = true;
+                if (document.getElementById('installBtn')) {
+                    document.getElementById('installBtn').remove();
+                }
             });
-            
-            document.body.appendChild(installBtn);
-        });
+
+            // Listen for beforeinstallprompt event
+            window.addEventListener('beforeinstallprompt', (e) => {
+                console.log('beforeinstallprompt event fired');
+                e.preventDefault();
+                deferredPrompt = e;
+
+                // Create install button
+                createInstallButton();
+            });
+
+            function createInstallButton() {
+                // Remove existing button if any
+                const existingBtn = document.getElementById('installBtn');
+                if (existingBtn) {
+                    existingBtn.remove();
+                }
+
+                const installBtn = document.createElement('button');
+                installBtn.id = 'installBtn';
+                installBtn.innerHTML = '<i class="fas fa-download"></i> Install App';
+                installBtn.className = 'btn btn-success';
+                installBtn.style.cssText = `
+                    position: fixed; 
+                    bottom: 20px; 
+                    right: 20px; 
+                    z-index: 1000; 
+                    padding: 12px 20px;
+                    border-radius: 25px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    font-weight: bold;
+                    animation: pulse 2s infinite;
+                `;
+
+                installBtn.addEventListener('click', async () => {
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        console.log(`User response to the install prompt: ${outcome}`);
+                        deferredPrompt = null;
+                        installBtn.remove();
+                    }
+                });
+
+                document.body.appendChild(installBtn);
+            }
+
+            // Check PWA criteria and show install button
+            function checkPWAInstallability() {
+                // Check if app meets PWA criteria
+                const hasManifest = document.querySelector('link[rel="manifest"]');
+                const hasServiceWorker = 'serviceWorker' in navigator;
+                
+                console.log('PWA Check:', {
+                    hasManifest: !!hasManifest,
+                    hasServiceWorker: hasServiceWorker,
+                    isHTTPS: location.protocol === 'https:' || location.hostname === 'localhost'
+                });
+
+                // If criteria met but no install prompt, show manual install button
+                if (hasManifest && hasServiceWorker && !deferredPrompt && !isInstalled) {
+                    setTimeout(() => {
+                        createInstallButton();
+                    }, 3000);
+                }
+            }
+
+            // Run PWA check after page load
+            window.addEventListener('load', () => {
+                setTimeout(checkPWAInstallability, 2000);
+            });
     </script>
 </body>
 </html>
