@@ -1,6 +1,6 @@
 # Liquid Vending Machine App - Laravel + Vue.js
 
-A complete liquid vending machine application built with Laravel backend and Vue.js frontend.
+A complete liquid vending machine application built with Laravel backend and Vue.js frontend, featuring interactive product selection, admin panel, and multiple payment methods.
 
 ## 🚀 Features
 
